@@ -359,6 +359,10 @@ void SystemStub_SDL::processEvents() {
 					_pi.stateSlot = 1;
 				} else if (ev.key.keysym.sym == SDLK_KP_MINUS) {
 					_pi.stateSlot = -1;
+				} else if (ev.key.keysym.sym == SDLK_r) {
+					_pi.inpRecord = true;
+				} else if (ev.key.keysym.sym == SDLK_p) {
+					_pi.inpReplay = true;
 				}
 			}
 			_pi.lastChar = ev.key.keysym.sym;

@@ -33,6 +33,12 @@ Menu::Menu(Player *ply, Resource *res, SystemStub *stub, Video *vid, Version ver
 	case VER_US:
 		_textOptions = _textOptionsEN;
 		break;
+	case VER_DE:
+		_textOptions = _textOptionsDE;
+		break;
+	case VER_SP:
+		_textOptions = _textOptionsSP;
+		break;
 	}
 }
 
@@ -114,6 +120,8 @@ void Menu::handleInfoScreen() {
 		loadPicture("instru_f");
 		break;
 	case VER_US:
+	case VER_DE:
+	case VER_SP:
 		loadPicture("instru_e");
 		break;
 	}

@@ -24,7 +24,7 @@
 Resource::Resource(const char *dataPath) {
 	memset(this, 0, sizeof(Resource));
 	_dataPath = dataPath;
-	_memBuf = (uint8 *)malloc(100 * 1024); // XXX reconsider this value
+	_memBuf = (uint8 *)malloc(0xE000);
 }
 
 Resource::~Resource() {
@@ -307,12 +307,8 @@ void Resource::load_CT(File *pf) {
 	uint8 *tmp = (uint8 *)malloc(len);
 	assert(tmp);
 	pf->read(tmp, len);
-
-	Unpack unp;
-	int decSize;
-	bool ret = unp.unpack((uint8 *)_ctData, tmp, len, decSize);
-	assert(ret && decSize == 0x1D00);
-
+	bool ret = delphine_unpack((uint8 *)_ctData, tmp, len);
+	assert(ret);
 	free(tmp);
 }
 
@@ -476,7 +472,7 @@ void Resource::load_PGE(File *f) {
 		pge->init_room = f->readByte();
 		pge->room_location = f->readByte();
 		pge->init_flags = f->readByte();
-		pge->unk16 = f->readByte();
+		pge->colliding_icon_num = f->readByte();
 		pge->icon_num = f->readByte();
 		pge->object_id = f->readByte();
 		pge->skill = f->readByte();

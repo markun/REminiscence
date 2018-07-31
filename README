@@ -1,6 +1,6 @@
 
 REminiscence README
-Release version: 0.1.4 (Apr 2 2005)
+Release version: 0.1.5 (Apr 5 2005)
 -------------------------------------------------------------------------------
 
 About:
@@ -61,6 +61,8 @@ Here are the various in game hotkeys :
     Ctrl S          save game state
     Ctrl L          load game state
     Ctrl + and -    change game state slot
+    Ctrl R          toggle input keys record
+    Ctrl P          toggle input keys replay
 
 Credits:
 --------

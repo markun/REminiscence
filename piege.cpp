@@ -18,6 +18,7 @@
 
 #include "cutscene.h"
 #include "resource.h"
+#include "systemstub.h"
 #include "game.h"
 
 
@@ -496,6 +497,20 @@ void Game::pge_addToCurrentRoomList(LivePGE *pge, uint8 room) {
 			pge->next_PGE_in_room = temp;
 			_pge_liveTable1[pge->room_location] = pge;
 		}
+	}
+}
+
+void Game::pge_getInput() {
+	inp_update();
+	_pge_inpKeysMask = _stub->_pi.dirMask;
+	if (_stub->_pi.enter) {
+		_pge_inpKeysMask |= 0x10;
+	}
+	if (_stub->_pi.space) {
+		_pge_inpKeysMask |= 0x20;
+	}
+	if (_stub->_pi.shift) {
+		_pge_inpKeysMask |= 0x40;
 	}
 }
 
@@ -1084,7 +1099,7 @@ int Game::pge_o_unk0x40(ObjectOpcodeArgs *args) {
 	return 0;
 }
 
-int Game::pge_o_unk0x41(ObjectOpcodeArgs *args) {
+int Game::pge_op_wakeUpPiege(ObjectOpcodeArgs *args) {
 	if (args->a <= 3) {
 		int16 num = args->pge->init_PGE->counter_values[args->a];
 		if (num >= 0) {
@@ -1096,7 +1111,7 @@ int Game::pge_o_unk0x41(ObjectOpcodeArgs *args) {
 	return 1;
 }
 
-int Game::pge_o_unk0x42(ObjectOpcodeArgs *args) {
+int Game::pge_op_removePiege(ObjectOpcodeArgs *args) {
 	if (args->a <= 3) {
 		int16 num = args->pge->init_PGE->counter_values[args->a];
 		if (num >= 0) {
@@ -1107,7 +1122,7 @@ int Game::pge_o_unk0x42(ObjectOpcodeArgs *args) {
 	return 1;
 }
 
-int Game::pge_o_unk0x43(ObjectOpcodeArgs *args) {
+int Game::pge_op_removePiegeIfNotNear(ObjectOpcodeArgs *args) {
 	LivePGE *pge = args->pge;
 	if (!(pge->init_PGE->flags & 4)) goto kill_pge;
 	if (_currentRoom & 0x80) goto skip_pge;

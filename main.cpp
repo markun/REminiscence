@@ -25,13 +25,15 @@ static const char *USAGE =
 	"Usage: rs [OPTIONS]...\n"
 	"  --datapath=PATH   Path to where the game is installed (default '.')\n"
 	"  --savepath=PATH   Path to where the save files are stored (default '.')\n"
-	"  --version=VER     Version of the game to load : fr, us (default)\n";
+	"  --version=VER     Version of the game to load : fr, sp, de, us (default)\n";
 
 static const struct {
 	const char *name;
 	Version ver;
 } VERSIONS[] = {
 	{ "fr",  VER_FR },
+	{ "sp",  VER_SP },
+	{ "de",  VER_DE },
 	{ "us",  VER_US }
 };
 

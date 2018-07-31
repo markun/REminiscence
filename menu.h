@@ -42,6 +42,8 @@ struct Menu {
 
 	static const char *_textOptionsFR[];
 	static const char *_textOptionsEN[];
+	static const char *_textOptionsDE[];
+	static const char *_textOptionsSP[];
 	static const char *_passwords[8][3];
 
 	Player *_ply;

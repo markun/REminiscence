@@ -89,7 +89,7 @@ uint16 Cutscene::findTextSeparators(const uint8 *p) {
 	uint8 *q = _textSep;
 	uint16 ret = 0;
 	uint16 pos = 0;
-	for ( ; *p != 0xA; ++p) {
+	for (; *p != 0xA; ++p) {
 		if (*p == 0x7C) {
 			*q++ = pos;
 			if (pos > ret) {
@@ -125,7 +125,7 @@ void Cutscene::drawText(int16 x, int16 y, const uint8 *p, uint16 color, uint8 *p
 	if (n != 0) {
 		xx += ((last_sep - *sep++) & 0xFE) * 4;
 	}
-	for ( ; *p != 0xA; ++p) {
+	for (; *p != 0xA; ++p) {
 		if (*p == 0x7C) {
 			yy += 8;
 			xx = x;
@@ -928,6 +928,12 @@ void Cutscene::load(uint16 cutName) {
 		break;
 	case VER_US:
 		_res->load_CINE("ENGCINE");
+		break;
+	case VER_DE:
+		_res->load_CINE("GERCINE");
+		break;
+	case VER_SP:
+		_res->load_CINE("SPACINE");
 		break;
 	}
 }

@@ -46,6 +46,9 @@ struct PlayerInput {
 	bool load;
 	int stateSlot;
 
+	bool inpRecord;
+	bool inpReplay;
+
 	uint8 dbgMask;
 	bool quit;
 };
