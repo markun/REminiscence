@@ -1,5 +1,5 @@
 /* REminiscence - Flashback interpreter
- * Copyright (C) 2005 Gregory Montoir
+ * Copyright (C) 2005-2007 Gregory Montoir
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,20 +13,19 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 #include <ctime>
 #include "file.h"
-#include "locale.h"
 #include "systemstub.h"
 #include "unpack.h"
 #include "game.h"
 
 
 Game::Game(SystemStub *stub, const char *dataPath, const char *savePath, Version ver)
-	: _cut(&_modPly, &_res, stub, &_vid, ver), _loc(ver), _menu(&_loc, &_modPly, &_res, stub, &_vid),
-	_mix(stub), _modPly(&_mix, dataPath), _res(dataPath), _sfxPly(&_mix), _vid(&_res, stub),
+	: _cut(&_modPly, &_res, stub, &_vid, ver), _menu(&_modPly, &_res, stub, &_vid),
+	_mix(stub), _modPly(&_mix, dataPath), _res(dataPath, ver), _sfxPly(&_mix), _vid(&_res, stub),
 	_stub(stub), _savePath(savePath) {
 	_stateSlot = 1;
 	_inp_demo = 0;
@@ -38,6 +37,7 @@ void Game::run() {
 	_stub->init("REminiscence", Video::GAMESCREEN_W, Video::GAMESCREEN_H);
 
 	_randSeed = time(0);
+	_res.load_TEXT();
 	_res.load("FB_TXT", Resource::OT_FNT);
 
 #ifndef BYPASS_PROTECTION
@@ -75,6 +75,8 @@ void Game::run() {
 			mainLoop();
 		}
 	}
+
+	_res.free_TEXT();
 
 	_mix.free();
 	_stub->destroy();
@@ -146,7 +148,7 @@ void Game::mainLoop() {
 			LivePGE *pge = _pge_liveTable2[i];
 			if (pge) {
 				_col_currentPiegeGridPosY = (pge->pos_y / 36) & ~1;
-				_col_currentPiegeGridPosX = (pge->pos_x + 8) / 16;
+				_col_currentPiegeGridPosX = (pge->pos_x + 8) >> 4;
 				pge_process(pge);
 			}
 		}
@@ -174,18 +176,8 @@ void Game::mainLoop() {
 		if (_blinkingConradCounter != 0) {
 			--_blinkingConradCounter;
 		}
-
 		_vid.updateScreen();
-		static uint32 tstamp = 0;
-		if (!(_stub->_pi.dbgMask & PlayerInput::DF_FASTMODE)) {
-			int32 delay = _stub->getTimeStamp() - tstamp;
-			int32 pause = 30 - delay;
-			if (pause > 0) {
-				_stub->sleep(pause);
-			}
-			tstamp = _stub->getTimeStamp();
-		}
-
+		updateTiming();
 		drawStoryTexts();
 		if (_stub->_pi.backspace) {
 			_stub->_pi.backspace = false;
@@ -199,6 +191,17 @@ void Game::mainLoop() {
 		}
 		inp_handleSpecialKeys();
 	}
+}
+
+void Game::updateTiming() {
+	static uint32 tstamp = 0;
+	int32 delay = _stub->getTimeStamp() - tstamp;
+	int32 pause = (_stub->_pi.dbgMask & PlayerInput::DF_FASTMODE) ? 20 : 30;
+	pause -= delay;
+	if (pause > 0) {
+		_stub->sleep(pause);
+	}
+	tstamp = _stub->getTimeStamp();
 }
 
 void Game::playCutscene(int id) {
@@ -346,12 +349,12 @@ bool Game::handleConfigPanel() {
 	uint8 colors[] = { 2, 3, 3, 3 };
 	int current = 0;
 	while (!_stub->_pi.quit) {
-		_menu.drawString(_loc.get(Locale::LI_18_RESUME_GAME), y + 2, 9, colors[0]);
-		_menu.drawString(_loc.get(Locale::LI_20_LOAD_GAME), y + 4, 9, colors[1]);
-		_menu.drawString(_loc.get(Locale::LI_21_SAVE_GAME), y + 6, 9, colors[2]);
-		_menu.drawString(_loc.get(Locale::LI_19_ABORT_GAME), y + 8, 9, colors[3]);
+		_menu.drawString(_res.getMenuString(LocaleData::LI_18_RESUME_GAME), y + 2, 9, colors[0]);
+		_menu.drawString(_res.getMenuString(LocaleData::LI_20_LOAD_GAME), y + 4, 9, colors[1]);
+		_menu.drawString(_res.getMenuString(LocaleData::LI_21_SAVE_GAME), y + 6, 9, colors[2]);
+		_menu.drawString(_res.getMenuString(LocaleData::LI_19_ABORT_GAME), y + 8, 9, colors[3]);
 		char slotItem[30];
-		sprintf(slotItem, "%s : %d-%02d", _loc.get(Locale::LI_22_SAVE_SLOT), _currentLevel + 1, _stateSlot);
+		sprintf(slotItem, "%s : %d-%02d", _res.getMenuString(LocaleData::LI_22_SAVE_SLOT), _currentLevel + 1, _stateSlot);
 		_menu.drawString(slotItem, y + 10, 9, 1);
 
 		_vid.updateScreen();
@@ -413,14 +416,14 @@ bool Game::handleContinueAbort() {
 	memcpy(_vid._tempLayer, _vid._frontLayer, Video::GAMESCREEN_W * Video::GAMESCREEN_H);
 	while (timeout >= 0 && !_stub->_pi.quit) {
 		const char *str;
-		str = _loc.get(Locale::LI_01_CONTINUE_OR_ABORT);
+		str = _res.getMenuString(LocaleData::LI_01_CONTINUE_OR_ABORT);
 		_vid.drawString(str, (256 - strlen(str) * 8) / 2, 64, 0xE3);
-		str = _loc.get(Locale::LI_02_TIME);
+		str = _res.getMenuString(LocaleData::LI_02_TIME);
 		sprintf(textBuf, "%s : %d", str, timeout / 10);
 		_vid.drawString(textBuf, 96, 88, 0xE3);
-		str = _loc.get(Locale::LI_03_CONTINUE);
+		str = _res.getMenuString(LocaleData::LI_03_CONTINUE);
 		_vid.drawString(str, (256 - strlen(str) * 8) / 2, 104, colors[0]);
-		str = _loc.get(Locale::LI_04_ABORT);
+		str = _res.getMenuString(LocaleData::LI_04_ABORT);
 		_vid.drawString(str, (256 - strlen(str) * 8) / 2, 112, colors[1]);
 		sprintf(textBuf, "SCORE  %08lu", _score);
 		_vid.drawString(textBuf, 64, 154, 0xE3);
@@ -470,7 +473,7 @@ bool Game::handleProtectionScreen() {
 	bool valid = true;
 	_cut.prepare();
 	_cut.copyPalette(_protectionPal, 0);
-	_cut.setPalette0xC();
+	_cut.updatePalette();
 	_cut._gfx.setClippingRect(64, 48, 128, 128);
 
 	_menu._charVar1 = 0xE0;
@@ -558,7 +561,7 @@ void Game::printLevelCode() {
 
 void Game::printSaveStateCompleted() {
 	if (_saveStateCompleted) {
-		const char *str = _loc.get(Locale::LI_05_COMPLETED);
+		const char *str = _res.getMenuString(LocaleData::LI_05_COMPLETED);
 		_vid.drawString(str, (176 - strlen(str) * 8) / 2, 34, 0xE6);
 	}
 }
@@ -591,8 +594,9 @@ void Game::drawLevelTexts() {
 void Game::drawStoryTexts() {
 	if (_textToDisplay != 0xFFFF) {
 		uint16 text_col_mask = 0xE8;
-		const uint8 *str = _loc._stringsTable + READ_LE_UINT16(_loc._stringsTable + _textToDisplay * 2);
+		const uint8 *str = _res.getGameString(_textToDisplay);
 		memcpy(_vid._tempLayer, _vid._frontLayer, Video::GAMESCREEN_W * Video::GAMESCREEN_H);
+		int textSpeechSegment = 0;
 		while (!_stub->_pi.quit) {
 			drawIcon(_currentInventoryIconNum, 80, 8, 0xA);
 			if (*str == 0xFF) {
@@ -609,10 +613,18 @@ void Game::drawStoryTexts() {
 				}
 				++str;
 			}
+			MixerChunk chunk;
+			_res.load_VCE(_textToDisplay, textSpeechSegment++, &chunk.data, &chunk.len);
+			if (chunk.data) {
+				_mix.play(&chunk, 32000, Mixer::MAX_VOLUME);
+			}
 			_vid.updateScreen();
 			while (!_stub->_pi.backspace && !_stub->_pi.quit) {
 				inp_update();
 				_stub->sleep(80);
+			}
+			if (chunk.data) {
+				_mix.stopAll();
 			}
 			_stub->_pi.backspace = false;
 			if (*str == 0) {
@@ -1029,9 +1041,9 @@ void Game::drawCharacter(const uint8 *dataPtr, int16 pos_x, int16 pos_y, uint8 a
 	_vid.markBlockAsDirty(pos_x, pos_y, sprite_clipped_w, sprite_clipped_h);
 }
 
-uint8 *Game::loadBankData(uint16 MbkEntryNum) {
-	debug(DBG_GAME, "Game::loadBankData(%d)", MbkEntryNum);
-	MbkEntry *me = &_res._mbk[MbkEntryNum];
+uint8 *Game::loadBankData(uint16 mbkEntryNum) {
+	debug(DBG_GAME, "Game::loadBankData(%d)", mbkEntryNum);
+	MbkEntry *me = &_res._mbk[mbkEntryNum];
 	const uint16 avail = _lastBankData - _firstBankData;
 	const uint16 size = (me->len & 0x7FFF) * 32;
 	if (avail < size) {
@@ -1040,19 +1052,20 @@ uint8 *Game::loadBankData(uint16 MbkEntryNum) {
 		_curBankSlot->ptr = 0;
 		_firstBankData = _bankData;
 	}
-	_curBankSlot->entryNum = MbkEntryNum;
+	_curBankSlot->entryNum = mbkEntryNum;
 	_curBankSlot->ptr = _firstBankData;
 	++_curBankSlot;
 	_curBankSlot->entryNum = 0xFFFF;
 	_curBankSlot->ptr = 0;
 	const uint8 *data = _res._mbkData + me->offset;
 	if (me->len & 0x8000) {
-		warning("me->len & 0x8000");
+		warning("Uncompressed bank data %d", mbkEntryNum);
 		memcpy(_firstBankData, data, size);
 	} else {
 		assert(me->offset != 0);
-		bool ret = delphine_unpack(_firstBankData, data, 0);
-		assert(ret);
+		if (!delphine_unpack(_firstBankData, data, 0)) {
+			error("Bad CRC for bank data %d", mbkEntryNum);
+		}
 	}
 	uint8 *bankData = _firstBankData;
 	_firstBankData += size;
@@ -1281,7 +1294,7 @@ void Game::handleInventory() {
 				char textBuf[50];
 				sprintf(textBuf, "SCORE %08lu", _score);
 				_vid.drawString(textBuf, (114 - strlen(textBuf) * 8) / 2 + 72, 158, 0xE5);
-				sprintf(textBuf, "%s:%s", _loc.get(Locale::LI_06_LEVEL), _loc.get(Locale::LI_13_EASY + _skillLevel));
+				sprintf(textBuf, "%s:%s", _res.getMenuString(LocaleData::LI_06_LEVEL), _res.getMenuString(LocaleData::LI_13_EASY + _skillLevel));
 				_vid.drawString(textBuf, (114 - strlen(textBuf) * 8) / 2 + 72, 166, 0xE5);
 			}
 

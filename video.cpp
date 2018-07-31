@@ -1,5 +1,5 @@
 /* REminiscence - Flashback interpreter
- * Copyright (C) 2005 Gregory Montoir
+ * Copyright (C) 2005-2007 Gregory Montoir
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 #include "resource.h"
@@ -112,18 +112,18 @@ void Video::fullRefresh() {
 
 void Video::fadeOut() {
 	debug(DBG_VIDEO, "Video::fadeOut()");
-	for (int i = 0; i <= 6; ++i) {
+	for (int step = 16; step >= 0; --step) {
 		for (int c = 0; c < 256; ++c) {
 			Color col;
 			_stub->getPaletteEntry(c, &col);
-			col.r >>= 1;
-			col.g >>= 1;
-			col.b >>= 1;
+			col.r = col.r * step >> 4;
+			col.g = col.g * step >> 4;
+			col.b = col.b * step >> 4;
 			_stub->setPaletteEntry(c, &col);
 		}
 		fullRefresh();
 		updateScreen();
-		_stub->sleep(120);
+		_stub->sleep(50);
 	}
 }
 

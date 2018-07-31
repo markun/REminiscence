@@ -1,5 +1,5 @@
 /* REminiscence - Flashback interpreter
- * Copyright (C) 2005 Gregory Montoir
+ * Copyright (C) 2005-2007 Gregory Montoir
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,24 +13,18 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <cmath>
 #include "mod_player.h"
 #include "resource.h"
 #include "systemstub.h"
 #include "video.h"
 #include "cutscene.h"
 
-static uint16 _cosTable[360], _sinTable[360];
 
 Cutscene::Cutscene(ModPlayer *ply, Resource *res, SystemStub *stub, Video *vid, Version ver)
 	: _ply(ply), _res(res), _stub(stub), _vid(vid), _ver(ver) {
-	for (int i = 0; i < 360; ++i) {
-		_cosTable[i] = (uint16)(cos(i * M_PI / 180) * 256);
-		_sinTable[i] = (uint16)(sin(i * M_PI / 180) * 256);
-	}
 	memset(_palBuf, 0, sizeof(_palBuf));
 }
 
@@ -55,7 +49,7 @@ void Cutscene::copyPalette(const uint8 *pal, uint16 num) {
 	_newPal = true;
 }
 
-void Cutscene::setPalette0xC() {
+void Cutscene::updatePalette() {
 	if (_newPal) {
 		const uint8 *p = _palBuf;
 		for (int i = 0; i < 32; ++i) {
@@ -73,7 +67,7 @@ void Cutscene::setPalette0xC() {
 
 void Cutscene::setPalette() {
 	sync();
-	setPalette0xC();
+	updatePalette();
 	SWAP(_page0, _page1);
 	_stub->copyRect(0, 0, Video::GAMESCREEN_W, Video::GAMESCREEN_H, _page0, 256);
 	_stub->updateScreen(0);
@@ -219,8 +213,6 @@ void Cutscene::drawProtectionShape(uint8 shapeNum, int16 zoom) {
 	debug(DBG_CUT, "Cutscene::drawProtectionShape() shapeNum = %d", shapeNum);
 	_shape_ix = 64;
 	_shape_iy = 64;
-	_shape_unk_x = 0;
-	_shape_unk_y = 0;
 	_shape_count = 0;
 
 	int16 x = 0;
@@ -248,7 +240,7 @@ void Cutscene::drawProtectionShape(uint8 shapeNum, int16 zoom) {
 		}
 		_hasAlphaColor = (verticesOffset & 0x4000) != 0;
 		_primitiveColor = 0xC0 + *shapeData++;
-		op_drawShape2Helper(p, zoom, dx, dy, x, y, 0, 0);
+		drawShapeScaleRotate(p, zoom, dx, dy, x, y, 0, 0);
 		++_shape_count;
 	}
 }
@@ -265,7 +257,7 @@ void Cutscene::op_markCurPos() {
 
 void Cutscene::op_refreshScreen() {
 	debug(DBG_CUT, "Cutscene::op_refreshScreen()");
-	_clearScreen = CMD_fetchByte();
+	_clearScreen = fetchNextCmdByte();
 	if (_clearScreen != 0) {
 		swapLayers();
 		_varText = 0;
@@ -275,7 +267,7 @@ void Cutscene::op_refreshScreen() {
 void Cutscene::op_waitForSync() {
 	debug(DBG_CUT, "Cutscene::op_waitForSync()");
 	if (_creditsSequence) {
-		uint16 n = CMD_fetchByte() * 2;
+		uint16 n = fetchNextCmdByte() * 2;
 		do {
 			_varText = 0xFF;
 			_frameDelay = 3;
@@ -289,13 +281,13 @@ void Cutscene::op_waitForSync() {
 		swapLayers();
 		_varText = 0;
 	} else {
-		_frameDelay = CMD_fetchByte() * 4;
+		_frameDelay = fetchNextCmdByte() * 4;
 		sync(); // XXX handle input
 	}
 }
 
-void Cutscene::op_drawShape0Helper(const uint8 *data, int16 x, int16 y) {
-	debug(DBG_CUT, "Cutscene::op_drawShape0Helper()");
+void Cutscene::drawShape(const uint8 *data, int16 x, int16 y) {
+	debug(DBG_CUT, "Cutscene::drawShape()");
 	_gfx._layer = _page1;
 	uint8 numVertices = *data++;
 	if (numVertices & 0x80) {
@@ -337,15 +329,15 @@ void Cutscene::op_drawShape0Helper(const uint8 *data, int16 x, int16 y) {
 	}
 }
 
-void Cutscene::op_drawShape0() {
-	debug(DBG_CUT, "Cutscene::op_drawShape0()");
+void Cutscene::op_drawShape() {
+	debug(DBG_CUT, "Cutscene::op_drawShape()");
 
 	int16 x = 0;
 	int16 y = 0;
-	uint16 shapeOffset = CMD_fetchWord();
+	uint16 shapeOffset = fetchNextCmdWord();
 	if (shapeOffset & 0x8000) {
-		x = CMD_fetchWord();
-		y = CMD_fetchWord();
+		x = fetchNextCmdWord();
+		y = fetchNextCmdWord();
 	}
 
 	const uint8 *shapeOffsetTable    = _polPtr + READ_BE_UINT16(_polPtr + 0x02);
@@ -371,7 +363,7 @@ void Cutscene::op_drawShape0() {
 			color += 0x10;
 		}
 		_primitiveColor = 0xC0 + color;
-		op_drawShape0Helper(primitiveVertices, x + dx, y + dy);
+		drawShape(primitiveVertices, x + dx, y + dy);
 	}
 	if (_clearScreen != 0) {
 		memcpy(_pageC, _page1, Video::GAMESCREEN_W * Video::GAMESCREEN_H);
@@ -380,8 +372,8 @@ void Cutscene::op_drawShape0() {
 
 void Cutscene::op_setPalette() {
 	debug(DBG_CUT, "Cutscene::op_setPalette()");
-	uint8 num = CMD_fetchByte();
-	uint8 palNum = CMD_fetchByte();
+	uint8 num = fetchNextCmdByte();
+	uint8 palNum = fetchNextCmdByte();
 	uint16 off = READ_BE_UINT16(_polPtr + 6);
 	const uint8 *p = _polPtr + off + num * 32;
 	copyPalette(p, palNum ^ 1);
@@ -393,7 +385,7 @@ void Cutscene::op_setPalette() {
 
 void Cutscene::op_drawStringAtBottom() {
 	debug(DBG_CUT, "Cutscene::op_drawStringAtBottom()");
-	uint16 strId = CMD_fetchWord();
+	uint16 strId = fetchNextCmdWord();
 	if (!_creditsSequence) {
 		memset(_pageC + 179 * 256, 0xC0, 45 * 256);
 		memset(_page1 + 179 * 256, 0xC0, 45 * 256);
@@ -424,8 +416,8 @@ void Cutscene::op_refreshAll() {
 	op_handleKeys();
 }
 
-void Cutscene::op_drawShape1Helper(const uint8 *data, int16 zoom, int16 b, int16 c, int16 d, int16 e, int16 f, int16 g) {
-	debug(DBG_CUT, "Cutscene::op_drawShape1Helper(%d, %d, %d, %d, %d, %d, %d)", zoom, b, c, d, e, f, g);
+void Cutscene::drawShapeScale(const uint8 *data, int16 zoom, int16 b, int16 c, int16 d, int16 e, int16 f, int16 g) {
+	debug(DBG_CUT, "Cutscene::drawShapeScale(%d, %d, %d, %d, %d, %d, %d)", zoom, b, c, d, e, f, g);
 	_gfx._layer = _page1;
 	uint8 numVertices = *data++;
 	if (numVertices & 0x80) {
@@ -546,24 +538,22 @@ void Cutscene::op_drawShape1Helper(const uint8 *data, int16 zoom, int16 b, int16
 	}
 }
 
-void Cutscene::op_drawShape1() {
-	debug(DBG_CUT, "Cutscene::op_drawShape1()");
+void Cutscene::op_drawShapeScale() {
+	debug(DBG_CUT, "Cutscene::op_drawShapeScale()");
 
-	_shape_unk_x = 0;
-	_shape_unk_y = 0;
 	_shape_count = 0;
 
 	int16 x = 0;
 	int16 y = 0;
-	uint16 shapeOffset = CMD_fetchWord();
+	uint16 shapeOffset = fetchNextCmdWord();
 	if (shapeOffset & 0x8000) {
-		x = CMD_fetchWord();
-		y = CMD_fetchWord();
+		x = fetchNextCmdWord();
+		y = fetchNextCmdWord();
 	}
 
-	uint16 zoom = CMD_fetchWord() + 512;
-	_shape_ix = CMD_fetchByte();
-	_shape_iy = CMD_fetchByte();
+	uint16 zoom = fetchNextCmdWord() + 512;
+	_shape_ix = fetchNextCmdByte();
+	_shape_iy = fetchNextCmdByte();
 
 	const uint8 *shapeOffsetTable    = _polPtr + READ_BE_UINT16(_polPtr + 0x02);
 	const uint8 *shapeDataTable      = _polPtr + READ_BE_UINT16(_polPtr + 0x0E);
@@ -599,14 +589,14 @@ void Cutscene::op_drawShape1() {
 				color += 0x10; // 2nd pal buf
 			}
 			_primitiveColor = 0xC0 + color;
-			op_drawShape1Helper(p, zoom, dx, dy, x, y, 0, 0);
+			drawShapeScale(p, zoom, dx, dy, x, y, 0, 0);
 			++_shape_count;
 		}
 	}
 }
 
-void Cutscene::op_drawShape2Helper(const uint8 *data, int16 zoom, int16 b, int16 c, int16 d, int16 e, int16 f, int16 g) {
-	debug(DBG_CUT, "Cutscene::op_drawShape2Helper(%d, %d, %d, %d, %d, %d, %d)", zoom, b, c, d, e, f, g);
+void Cutscene::drawShapeScaleRotate(const uint8 *data, int16 zoom, int16 b, int16 c, int16 d, int16 e, int16 f, int16 g) {
+	debug(DBG_CUT, "Cutscene::drawShapeScaleRotate(%d, %d, %d, %d, %d, %d, %d)", zoom, b, c, d, e, f, g);
 	_gfx._layer = _page1;
 	uint8 numVertices = *data++;
 	if (numVertices & 0x80) {
@@ -686,7 +676,7 @@ void Cutscene::op_drawShape2Helper(const uint8 *data, int16 zoom, int16 b, int16
 		_shape_prev_y16 = _shape_cur_y16;
 		_gfx.drawPoint(_primitiveColor, &pt);
 	} else {
-		int16 x, y, a;
+		int16 x, y, a, shape_last_x, shape_last_y;
 		Point tempVertices[40];
 		_shape_cur_x = b + READ_BE_UINT16(data); data += 2;
 		x = _shape_cur_x;
@@ -699,35 +689,35 @@ void Cutscene::op_drawShape2Helper(const uint8 *data, int16 zoom, int16 b, int16
 		if (_shape_count == 0) {
 			_shape_ox = a;
 		}
-		_shape_cur_x = _shape_unk_x2 = a;
+		_shape_cur_x = shape_last_x = a;
 		a = _shape_iy + ((_rotData[2] * _shape_cur_x16 + _rotData[3] * _shape_cur_y16) >> 8);
 		if (_shape_count == 0) {
 			_shape_oy = a;
 		}
-		_shape_cur_y = _shape_unk_y2 = a;
+		_shape_cur_y = shape_last_y = a;
 
 		int16 ix = x;
 		int16 iy = y;
 		Point *pt2 = tempVertices;
-		_shape_unk_x = 0;
+		int16 sx = 0;
 		for (int16 n = numVertices - 1; n >= 0; --n) {
-			x = (int8)(*data++) + _shape_unk_x;
+			x = (int8)(*data++) + sx;
 			y = (int8)(*data++);
 			if (y == 0 && n != 0 && *(data + 1) == 0) {
-				_shape_unk_x = x;
+				sx = x;
 				--numVertices;
 			} else {
 				ix += x;
 				iy += y;
-				_shape_unk_x = 0;
+				sx = 0;
 				_shape_cur_x16 = _shape_ix - ix;
 				_shape_cur_y16 = _shape_iy - iy;
 				a = _shape_ix + ((_rotData[0] * _shape_cur_x16 + _rotData[1] * _shape_cur_y16) >> 8);
-				pt2->x = a - _shape_unk_x2;
-				_shape_unk_x2 = a;
+				pt2->x = a - shape_last_x;
+				shape_last_x = a;
 				a = _shape_iy + ((_rotData[2] * _shape_cur_x16 + _rotData[3] * _shape_cur_y16) >> 8);
-				pt2->y = a - _shape_unk_y2;
-				_shape_unk_y2 = a;
+				pt2->y = a - shape_last_y;
+				shape_last_y = a;
 				++pt2;
 			}
 		}
@@ -766,37 +756,35 @@ void Cutscene::op_drawShape2Helper(const uint8 *data, int16 zoom, int16 b, int16
 	}
 }
 
-void Cutscene::op_drawShape2() {
-	debug(DBG_CUT, "Cutscene::op_drawShape2()");
+void Cutscene::op_drawShapeScaleRotate() {
+	debug(DBG_CUT, "Cutscene::op_drawShapeScaleRotate()");
 
-	_shape_unk_x = 0;
-	_shape_unk_y = 0;
 	_shape_count = 0;
 
 	int16 x = 0;
 	int16 y = 0;
-	uint16 shapeOffset = CMD_fetchWord();
+	uint16 shapeOffset = fetchNextCmdWord();
 	if (shapeOffset & 0x8000) {
-		x = CMD_fetchWord();
-		y = CMD_fetchWord();
+		x = fetchNextCmdWord();
+		y = fetchNextCmdWord();
 	}
 
 	uint16 zoom = 512;
 	if (shapeOffset & 0x4000) {
-		zoom += CMD_fetchWord();
+		zoom += fetchNextCmdWord();
 	}
-	_shape_ix = CMD_fetchByte();
-	_shape_iy = CMD_fetchByte();
+	_shape_ix = fetchNextCmdByte();
+	_shape_iy = fetchNextCmdByte();
 
 	uint16 r1, r2, r3;
-	r1 = CMD_fetchWord();
+	r1 = fetchNextCmdWord();
 	r2 = 180;
 	if (shapeOffset & 0x2000) {
-		r2 = CMD_fetchWord();
+		r2 = fetchNextCmdWord();
 	}
 	r3 = 90;
 	if (shapeOffset & 0x1000) {
-		r3 = CMD_fetchWord();
+		r3 = fetchNextCmdWord();
 	}
 	initRotationData(r1, r2, r3);
 
@@ -823,7 +811,7 @@ void Cutscene::op_drawShape2() {
 			color += 0x10; // 2nd pal buf
 		}
 		_primitiveColor = 0xC0 + color;
-		op_drawShape2Helper(p, zoom, dx, dy, x, y, 0, 0);
+		drawShapeScaleRotate(p, zoom, dx, dy, x, y, 0, 0);
 		++_shape_count;
 	}
 }
@@ -841,14 +829,23 @@ void Cutscene::op_drawCreditsText() {
 
 void Cutscene::op_drawStringAtPos() {
 	debug(DBG_CUT, "Cutscene::op_drawStringAtPos()");
-	uint16 strId = CMD_fetchWord();
+	uint16 strId = fetchNextCmdWord();
 	if (strId != 0xFFFF) {
-		int16 x = (int8)CMD_fetchByte() * 8;
-		int16 y = (int8)CMD_fetchByte() * 8;
+		int16 x = (int8)fetchNextCmdByte() * 8;
+		int16 y = (int8)fetchNextCmdByte() * 8;
 		if (!_creditsSequence) {
 			uint8 color = 0xD0 + (strId >> 0xC);
 			uint16 offset = READ_BE_UINT16(_res->_cine_off + (strId & 0xFFF) * 2);
 			drawText(x, y, _res->_cine_txt + offset, color, _page1, 2);
+			// workaround for buggy cutscene script
+			if (_id == 0x34 && (strId & 0xFFF) == 0x45) {
+				if ((_cmdPtr - _cmdPtrBak) == 0xA) {
+					_stub->copyRect(0, 0, Video::GAMESCREEN_W, Video::GAMESCREEN_H, _page1, 256);
+					_stub->updateScreen(0);
+				} else {
+					_stub->sleep(15);
+				}
+			}
 		}
 	}
 }
@@ -856,7 +853,7 @@ void Cutscene::op_drawStringAtPos() {
 void Cutscene::op_handleKeys() {
 	debug(DBG_CUT, "Cutscene::op_handleKeys()");
 	while (1) {
-		uint8 key_mask = CMD_fetchByte();
+		uint8 key_mask = fetchNextCmdByte();
 		if (key_mask == 0xFF) {
 			return;
 		}
@@ -887,7 +884,7 @@ void Cutscene::op_handleKeys() {
 	_stub->_pi.enter = false;
 	_stub->_pi.space = false;
 	_stub->_pi.shift = false;
-	int16 n = CMD_fetchWord();
+	int16 n = fetchNextCmdWord();
 	if (n < 0) {
 		n = -n - 1;
 		if (_varKey == 0) {
@@ -906,11 +903,11 @@ void Cutscene::op_handleKeys() {
 	_cmdPtr = _cmdPtrBak = _res->_cmd + n + _startOffset;
 }
 
-uint8 Cutscene::CMD_fetchByte() {
+uint8 Cutscene::fetchNextCmdByte() {
 	return *_cmdPtr++;
 }
 
-uint16 Cutscene::CMD_fetchWord() {
+uint16 Cutscene::fetchNextCmdWord() {
 	uint16 i = READ_BE_UINT16(_cmdPtr);
 	_cmdPtr += 2;
 	return i;
@@ -941,7 +938,7 @@ void Cutscene::mainLoop(uint16 offset) {
 	debug(DBG_CUT, "_startOffset = %d offset = %d", _startOffset, offset);
 
 	while (!_stub->_pi.quit && !_interrupted && !_stop) {
-		uint8 op = CMD_fetchByte();
+		uint8 op = fetchNextCmdByte();
 		debug(DBG_CUT, "Cutscene::play() opcode = 0x%X (%d)", op, (op >> 2));
 		if (op & 0x80) {
 			break;
@@ -967,20 +964,7 @@ void Cutscene::load(uint16 cutName) {
 	const char *name = _namesTable[cutName & 0xFF];
 	_res->load(name, Resource::OT_CMD);
 	_res->load(name, Resource::OT_POL);
-	switch (_ver) {
-	case VER_FR:
-		_res->load_CINE("FR_CINE");
-		break;
-	case VER_EN:
-		_res->load_CINE("ENGCINE");
-		break;
-	case VER_DE:
-		_res->load_CINE("GERCINE");
-		break;
-	case VER_SP:
-		_res->load_CINE("SPACINE");
-		break;
-	}
+	_res->load_CINE();
 }
 
 void Cutscene::prepare() {

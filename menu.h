@@ -1,5 +1,5 @@
 /* REminiscence - Flashback interpreter
- * Copyright (C) 2005 Gregory Montoir
+ * Copyright (C) 2005-2007 Gregory Montoir
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 #ifndef __MENU_H__
@@ -21,7 +21,6 @@
 
 #include "intern.h"
 
-struct Locale;
 struct ModPlayer;
 struct Resource;
 struct SystemStub;
@@ -42,7 +41,6 @@ struct Menu {
 
 	static const char *_passwords[8][3];
 
-	Locale *_loc;
 	ModPlayer *_ply;
 	Resource *_res;
 	SystemStub *_stub;
@@ -55,7 +53,7 @@ struct Menu {
 	uint8 _charVar4;
 	uint8 _charVar5;
 
-	Menu(Locale *loc, ModPlayer *ply, Resource *res, SystemStub *stub, Video *vid);
+	Menu(ModPlayer *ply, Resource *res, SystemStub *stub, Video *vid);
 
 	void drawString(const char *str, int16 y, int16 x, uint8 color);
 	void drawString2(const char *str, int16 y, int16 x);

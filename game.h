@@ -1,5 +1,5 @@
 /* REminiscence - Flashback interpreter
- * Copyright (C) 2005 Gregory Montoir
+ * Copyright (C) 2005-2007 Gregory Montoir
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 #ifndef __GAME_H__
@@ -21,7 +21,6 @@
 
 #include "intern.h"
 #include "cutscene.h"
-#include "locale.h"
 #include "menu.h"
 #include "mixer.h"
 #include "mod_player.h"
@@ -63,7 +62,6 @@ struct Game {
 	static const uint8 _protectionPal[];
 
 	Cutscene _cut;
-	Locale _loc;
 	Menu _menu;
 	Mixer _mix;
 	ModPlayer _modPly;
@@ -108,6 +106,7 @@ struct Game {
 	void run();
 	void resetGameState();
 	void mainLoop();
+	void updateTiming();
 	void playCutscene(int id = -1);
 	void loadLevelMap();
 	void loadLevelData();
@@ -149,7 +148,7 @@ struct Game {
 	LivePGE *_pge_liveTable1[256]; // pieges list by room (index = room)
 	LivePGE _pgeLive[256];
 	uint8 _pge_currentPiegeRoom;
-	uint16 _pge_currentPiegeFacingDir; // (0 == left)
+	bool _pge_currentPiegeFacingDir; // (false == left)
 	bool _pge_processOBJ;
 	uint8 _pge_inpKeysMask;
 	uint16 _pge_opTempVar1;
@@ -367,6 +366,8 @@ struct Game {
 
 
 	// input
+	uint8 _inp_lastKeysHit;
+	uint8 _inp_lastKeysHitLeftRight;
 	bool _inp_replay;
 	bool _inp_record;
 	File *_inp_demo;
