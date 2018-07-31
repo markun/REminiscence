@@ -170,7 +170,7 @@ void Game::pge_setupNextAnimFrame(LivePGE *pge, GroupPGE *le) {
 	ObjectNode *on = _res._objectNodesMap[init_pge->obj_node_number];
 	Object *obj = &on->objects[pge->first_obj_number];
 	int i = pge->first_obj_number;
-	while (pge->obj_type == obj->type && i <= on->last_obj_number) {
+	while (i < on->last_obj_number && pge->obj_type == obj->type) {
 		GroupPGE *next_le = le;
 		while (next_le) {
 			uint16 _ax = next_le->group_id;
@@ -402,7 +402,7 @@ uint16 Game::pge_processOBJ(LivePGE *pge) {
 	ObjectNode *on = _res._objectNodesMap[init_pge->obj_node_number];
 	Object *obj = &on->objects[pge->first_obj_number];
 	int i = pge->first_obj_number;
-	while (pge->obj_type == obj->type && on->last_obj_number > i) {
+	while (i < on->last_obj_number && pge->obj_type == obj->type) {
 		if (obj->opcode2 == 0x6B) return 0xFFFF;
 		if (obj->opcode2 == 0x22 && obj->opcode_arg2 <= 4) return 0xFFFF;
 
@@ -1900,6 +1900,7 @@ int Game::pge_op_changeRoom(ObjectOpcodeArgs *args) {
 			if (_currentRoom != live_pge_2->room_location) {
 				_currentRoom = live_pge_2->room_location;
 				loadLevelMap();
+				_vid.fullRefresh();
 			}
 		}
 		pge_setupDefaultAnim(live_pge_2);
@@ -1927,8 +1928,7 @@ int Game::pge_op_changeLevel(ObjectOpcodeArgs *args) {
 }
 
 int Game::pge_op_shakeScreen(ObjectOpcodeArgs *args) {
-//	_vid_displayOffset = (getRandomNumber() & 3) - 1;
-	warning("shaking screen is not yet implemented");
+	_vid._shakeOffset = getRandomNumber() & 7;
 	return 0xFFFF;
 }
 
@@ -2053,6 +2053,7 @@ int Game::pge_updateCollisionState(LivePGE *pge, int16 pge_dy, uint8 var8) {
 		while (slot1) {
 			if (slot1->unk2 == grid_data) {
 				slot1->data_size = pge_unk1C - 1;
+				assert(pge_unk1C < 0x70);
 				memset(grid_data, var8, pge_unk1C);
 				grid_data += pge_unk1C;
 				return 1;

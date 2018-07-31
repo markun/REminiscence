@@ -65,7 +65,7 @@ struct SystemStub {
 	virtual void getPaletteEntry(uint8 i, Color *c) = 0;
 	virtual void setOverscanColor(uint8 i) = 0;
 	virtual void copyRect(uint16 x, uint16 y, uint16 w, uint16 h, const uint8 *buf, uint32 pitch) = 0;
-	virtual void updateScreen() = 0;
+	virtual void updateScreen(uint8 shakeOffset) = 0;
 
 	virtual void processEvents() = 0;
 	virtual void sleep(uint32 duration) = 0;

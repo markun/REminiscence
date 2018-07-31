@@ -347,6 +347,14 @@ const uint16 Cutscene::_creditsCutSeq[] =  {
 	0x00, 0x05, 0x2F, 0x32, 0x36, 0x3E, 0x30, 0x39, 0x3F, 0x14, 0x34, 0xFFFF
 };
 
+const uint8 Cutscene::_musicTable[] = {
+	0x10, 0x15, 0x15, 0xFF, 0x15, 0x19, 0x0F, 0xFF, 0x15, 0x04, 0x15, 0xFF, 0xFF, 0x00, 0x19, 0x15,
+	0x15, 0x0D, 0x15, 0x0D, 0x18, 0x13, 0xFF, 0xFF, 0xFF, 0x14, 0x14, 0x14, 0x14, 0x14, 0xFF, 0xFF,
+	0x13, 0x13, 0x13, 0x13, 0x15, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x13, 0x13, 0x11, 0xFF, 0x03,
+	0x0E, 0x13, 0x12, 0xFF, 0x06, 0x07, 0x0A, 0x0A, 0x15, 0x05, 0x13, 0x02, 0x15, 0x09, 0x17, 0x08,
+	0x0B, 0x0C, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0xFF, 0xFF, 0xFF
+};
+
 const Level Game::_gameLevels[] = {
 	{ "level1", "level1", 0x00 },
 	{ "level2", "level2", 0x2F },
@@ -1135,4 +1143,84 @@ const uint8 Video::_palSlot0xF[] = {
 	0x00, 0x00, 0x00, 0x1F, 0x17, 0x2B, 0x2B, 0x1F, 0x37, 0x37, 0x2B, 0x47, 0x43, 0x37, 0x53, 0x4F,
 	0x43, 0x63, 0x5F, 0x53, 0x6F, 0x6F, 0x63, 0x7F, 0x7F, 0x73, 0x8B, 0x8F, 0x87, 0x9B, 0x9F, 0x97,
 	0xA7, 0xAF, 0xA7, 0xB3, 0xBF, 0xBB, 0xBF, 0xCF, 0xCF, 0xCF, 0x00, 0x33, 0x00, 0x17, 0x0F, 0x1F
+};
+
+const uint16 Player::_periodTable[] = {
+	856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453, // C-1 to B-1 Finetune 0
+	428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226, // C-2 to B-2 Finetune 0
+	214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120, 113, // C-3 to B-3 Finetune 0
+	850, 802, 757, 715, 674, 637, 601, 567, 535, 505, 477, 450, // C-1 to B-1 Finetune +1
+	425, 401, 379, 357, 337, 318, 300, 284, 268, 253, 239, 225, // C-2 to B-2 Finetune +1
+	213, 201, 189, 179, 169, 159, 150, 142, 134, 126, 119, 113, // C-3 to B-3 Finetune +1
+	844, 796, 752, 709, 670, 632, 597, 563, 532, 502, 474, 447, // C-1 to B-1 Finetune +2
+	422, 398, 376, 355, 335, 316, 298, 282, 266, 251, 237, 224, // C-2 to B-2 Finetune +2
+	211, 199, 188, 177, 167, 158, 149, 141, 133, 125, 118, 112, // C-3 to B-3 Finetune +2
+	838, 791, 746, 704, 665, 628, 592, 559, 528, 498, 470, 444, // C-1 to B-1 Finetune +3
+	419, 395, 373, 352, 332, 314, 296, 280, 264, 249, 235, 222, // C-2 to B-2 Finetune +3
+	209, 198, 187, 176, 166, 157, 148, 140, 132, 125, 118, 111, // C-3 to B-3 Finetune +3
+	832, 785, 741, 699, 660, 623, 588, 555, 524, 495, 467, 441, // C-1 to B-1 Finetune +4
+	416, 392, 370, 350, 330, 312, 294, 278, 262, 247, 233, 220, // C-2 to B-2 Finetune +4
+	208, 196, 185, 175, 165, 156, 147, 139, 131, 124, 117, 110, // C-3 to B-3 Finetune +4
+	826, 779, 736, 694, 655, 619, 584, 551, 520, 491, 463, 437, // C-1 to B-1 Finetune +5
+	413, 390, 368, 347, 328, 309, 292, 276, 260, 245, 232, 219, // C-2 to B-2 Finetune +5
+	206, 195, 184, 174, 164, 155, 146, 138, 130, 123, 116, 109, // C-3 to B-3 Finetune +5
+	820, 774, 730, 689, 651, 614, 580, 547, 516, 487, 460, 434, // C-1 to B-1 Finetune +6
+	410, 387, 365, 345, 325, 307, 290, 274, 258, 244, 230, 217, // C-2 to B-2 Finetune +6
+	205, 193, 183, 172, 163, 154, 145, 137, 129, 122, 115, 109, // C-3 to B-3 Finetune +6
+	814, 768, 725, 684, 646, 610, 575, 543, 513, 484, 457, 431, // C-1 to B-1 Finetune +7
+	407, 384, 363, 342, 323, 305, 288, 272, 256, 242, 228, 216, // C-2 to B-2 Finetune +7
+	204, 192, 181, 171, 161, 152, 144, 136, 128, 121, 114, 108, // C-3 to B-3 Finetune +7
+	907, 856, 808, 762, 720, 678, 640, 604, 570, 538, 504, 480, // C-1 to B-1 Finetune -8
+	453, 428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, // C-2 to B-2 Finetune -8
+	226, 214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120, // C-3 to B-3 Finetune -8
+	900, 850, 802, 757, 715, 675, 636, 601, 567, 535, 505, 477, // C-1 to B-1 Finetune -7
+	450, 425, 401, 379, 357, 337, 318, 300, 284, 268, 253, 238, // C-2 to B-2 Finetune -7
+	225, 212, 200, 189, 179, 169, 159, 150, 142, 134, 126, 119, // C-3 to B-3 Finetune -7
+	894, 844, 796, 752, 709, 670, 632, 597, 563, 532, 502, 474, // C-1 to B-1 Finetune -6
+	447, 422, 398, 376, 355, 335, 316, 298, 282, 266, 251, 237, // C-2 to B-2 Finetune -6
+	223, 211, 199, 188, 177, 167, 158, 149, 141, 133, 125, 118, // C-3 to B-3 Finetune -6
+	887, 838, 791, 746, 704, 665, 628, 592, 559, 528, 498, 470, // C-1 to B-1 Finetune -5
+	444, 419, 395, 373, 352, 332, 314, 296, 280, 264, 249, 235, // C-2 to B-2 Finetune -5
+	222, 209, 198, 187, 176, 166, 157, 148, 140, 132, 125, 118, // C-3 to B-3 Finetune -5
+	881, 832, 785, 741, 699, 660, 623, 588, 555, 524, 494, 467, // C-1 to B-1 Finetune -4
+	441, 416, 392, 370, 350, 330, 312, 294, 278, 262, 247, 233, // C-2 to B-2 Finetune -4
+	220, 208, 196, 185, 175, 165, 156, 147, 139, 131, 123, 117, // C-3 to B-3 Finetune -4
+	875, 826, 779, 736, 694, 655, 619, 584, 551, 520, 491, 463, // C-1 to B-1 Finetune -3
+	437, 413, 390, 368, 347, 338, 309, 292, 276, 260, 245, 232, // C-2 to B-2 Finetune -3
+	219, 206, 195, 184, 174, 164, 155, 146, 138, 130, 123, 116, // C-3 to B-3 Finetune -3
+	868, 820, 774, 730, 689, 651, 614, 580, 547, 516, 487, 460, // C-1 to B-1 Finetune -2
+	434, 410, 387, 365, 345, 325, 307, 290, 274, 258, 244, 230, // C-2 to B-2 Finetune -2
+	217, 205, 193, 183, 172, 163, 154, 145, 137, 129, 122, 115, // C-3 to B-3 Finetune -2
+	862, 814, 768, 725, 684, 646, 610, 575, 543, 513, 484, 457, // C-1 to B-1 Finetune -1
+	431, 407, 384, 363, 342, 323, 305, 288, 272, 256, 242, 228, // C-2 to B-2 Finetune -1
+	216, 203, 192, 181, 171, 161, 152, 144, 136, 128, 121, 114  // C-3 to B-3 Finetune -1
+};
+
+const char *Player::_moduleFiles[] = {
+	"mod.flashback-introb.mod", // introl3
+	"mod.flashback-options2.mod", // option3
+	0, // journal3
+	"mod.flashback-ceinturea.mod", // chute3
+	"mod.flashback-desintegr.mod", // desinte3
+	"mod.flashback-reunion.mod", // capture3
+	"mod.flashback-voyage.mod", // voyage3
+	"mod.flashback-teleport2.mod", // telepor3
+	"mod.flashback-fin.mod", // planexp3 XXX check
+	"mod.flashback-fin2.mod", // end31 XXX check
+	"mod.flashback-ascenseur.mod", // lift3
+	"mod.flashback-logo.mod", // present3
+	"mod.flashback-game_over.mod", // gameove3
+	"mod.flashback-holocube.mod", // holo3
+	"mod.flashback-memoire.mod", // memory3
+	"mod.flashback-chute.mod", // chutevi3
+	"mod.flashback-jungle.mod", // reveil3
+	"mod.flashback-missionca.mod", // misvali3
+	"mod.flashback-taxi.mod", // taxi3
+	"mod.flashback-donneobjt.mod", // donner3
+	0, // mission3
+	0, // objet3
+	0, // recharg3
+	0, // generat3
+	0, // pont3
+	0  // rechage3
 };

@@ -23,6 +23,7 @@
 #include "cutscene.h"
 #include "menu.h"
 #include "mixer.h"
+#include "mod_player.h"
 #include "resource.h"
 #include "video.h"
 
@@ -64,6 +65,7 @@ struct Game {
 	Cutscene _cut;
 	Menu _menu;
 	Mixer _mix;
+	Player _ply;
 	Resource _res;
 	Video _vid;
 	SystemStub *_stub;

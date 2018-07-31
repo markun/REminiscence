@@ -430,6 +430,7 @@ void Resource::load_OBJ(File *f) {
 			f->seek(offsets[i] + 2);
 			on->last_obj_number = f->readUint16LE();
 			on->num_objects = objectsCount[iObj];
+			debug(DBG_RES, "last = %d num = %d", on->last_obj_number, on->num_objects);
 			on->objects = (Object *)malloc(sizeof(Object) * on->num_objects);
 			for (uint16 j = 0; j < on->num_objects; ++j) {
 				Object *obj = &on->objects[j];
@@ -490,11 +491,11 @@ void Resource::load_PGE(File *f) {
 
 void Resource::load_ANI(File *f) {
 	debug(DBG_RES, "Resource::load_ANI()");
-	int len = f->size() - 2;
-	_ani = (uint8 *)malloc(len);
+	int size = f->size() - 2;
+	_ani = (uint8 *)malloc(size);
 	assert(_ani);
 	f->seek(2);
-	f->read(_ani, len);
+	f->read(_ani, size);
 }
 
 void Resource::load_TBN(File *f) {

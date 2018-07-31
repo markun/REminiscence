@@ -16,14 +16,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "mod_player.h"
 #include "resource.h"
 #include "systemstub.h"
 #include "video.h"
 #include "cutscene.h"
 
 
-Cutscene::Cutscene(Resource *res, SystemStub *stub, Video *vid, Version ver)
-	: _res(res), _stub(stub), _vid(vid), _ver(ver) {
+Cutscene::Cutscene(Player *ply, Resource *res, SystemStub *stub, Video *vid, Version ver)
+	: _ply(ply), _res(res), _stub(stub), _vid(vid), _ver(ver) {
 }
 
 void Cutscene::sync() {
@@ -68,7 +69,7 @@ void Cutscene::setPalette() {
 	setPalette0xC();
 	SWAP(_page0, _page1);
 	_stub->copyRect(0, 0, Video::GAMESCREEN_W, Video::GAMESCREEN_H, _page0, 256);
-	_stub->updateScreen();
+	_stub->updateScreen(0);
 }
 
 void Cutscene::initRotationData(uint16 a, uint16 b, uint16 c) {
@@ -879,9 +880,9 @@ void Cutscene::mainLoop(uint16 offset) {
 	for (int i = 0; i < 0x20; ++i) {
 		_stub->setPaletteEntry(0xC0 + i, &c);
 	}
-//	if (_id != 0x4A) {
-//		loadMusic();
-//	}
+	if (_id != 0x4A) {
+		_ply->startSong(_musicTable[_id]);
+	}
 	_newPal = false;
 	_hasAlphaColor = false;
 	uint8 *p = _res->_cmd;
@@ -910,6 +911,9 @@ void Cutscene::mainLoop(uint16 offset) {
 			_stub->_pi.backspace = false;
 			_interrupted = true;
 		}
+	}
+	if (_interrupted || _id != 0x0D) {
+		_ply->stopSong();
 	}
 }
 

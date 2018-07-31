@@ -24,8 +24,9 @@
 
 
 Game::Game(SystemStub *stub, const char *dataPath, const char *savePath, Version ver)
-	: _cut(&_res, stub, &_vid, ver), _menu(&_res, stub, &_vid, ver), _mix(stub),
-	_res(dataPath), _vid(&_res, stub), _stub(stub), _ver(ver), _savePath(savePath) {
+	: _cut(&_ply, &_res, stub, &_vid, ver), _menu(&_ply, &_res, stub, &_vid, ver),
+	_mix(stub), _ply(&_mix, dataPath), _res(dataPath), _vid(&_res, stub), _stub(stub),
+	_ver(ver), _savePath(savePath) {
 	switch (_ver) {
 	case VER_FR:
 		_stringsTable = _stringsTableFR;
@@ -243,7 +244,7 @@ void Game::showFinalScore() {
 	_vid.drawString(textBuf, (256 - strlen(textBuf) * 8) / 2, 16, 0xE7);
 	while (!_stub->_pi.quit) {
 		_stub->copyRect(0, 0, Video::GAMESCREEN_W, Video::GAMESCREEN_H, _vid._frontLayer, 256);
-		_stub->updateScreen();
+		_stub->updateScreen(0);
 		_stub->processEvents();
 		if (_stub->_pi.enter) {
 			_stub->_pi.enter = false;
@@ -291,7 +292,7 @@ bool Game::handleContinueAbort() {
 			return (current_color == 0);
 		}
 		_stub->copyRect(0, 0, Video::GAMESCREEN_W, Video::GAMESCREEN_H, _vid._frontLayer, 256);
-		_stub->updateScreen();
+		_stub->updateScreen(0);
 		if (col.b >= 0x3D) {
 			color_inc = 0;
 		}
@@ -1135,7 +1136,7 @@ void Game::saveGameState(uint8 slot) {
 	} else {
 		// header
 		f.writeUint32BE('FBSV');
-		f.writeUint16BE(0);
+		f.writeUint16BE(1);
 		char hdrdesc[32];
 		memset(hdrdesc, 0, sizeof(hdrdesc));
 		sprintf(hdrdesc, "level%d", _currentLevel + 1);
@@ -1162,7 +1163,7 @@ void Game::loadGameState(uint8 slot) {
 			warning("Bad save state format");
 		} else {
 			uint16 ver = f.readUint16BE();
-			if (ver != 0) {
+			if (ver != 1) {
 				warning("Invalid save state version");
 			} else {
 				char hdrdesc[32];
@@ -1180,9 +1181,10 @@ void Game::loadGameState(uint8 slot) {
 }
 
 void Game::saveState(File *f) {
+	f->writeByte(_skillLevel);
+	f->writeUint32BE(_score);
 	f->writeUint32BE(_col_slots2Cur - &_col_slots2[0]);
 	f->writeUint32BE(_col_slots2Next - &_col_slots2[0]);
-	f->writeUint32BE(_score);
 	for (int i = 0; i < _res._pgeNum; ++i) {
 		LivePGE *pge = &_pgeLive[i];
 		f->writeUint16BE(pge->obj_type);
@@ -1200,13 +1202,29 @@ void Game::saveState(File *f) {
 		f->writeByte(pge->flags);
 		f->writeByte(pge->index);
 		f->writeUint16BE(pge->first_obj_number);
-		f->writeUint32BE(pge->next_PGE_in_room - &_pgeLive[0]);
-		f->writeUint32BE(pge->init_PGE - &_res._pgeInit[0]);
+		if (pge->next_PGE_in_room == 0) {
+			f->writeUint32BE(0xFFFFFFFF);
+		} else {
+			f->writeUint32BE(pge->next_PGE_in_room - &_pgeLive[0]);
+		}
+		if (pge->init_PGE == 0) {
+			f->writeUint32BE(0xFFFFFFFF);
+		} else {
+			f->writeUint32BE(pge->init_PGE - &_res._pgeInit[0]);
+		}
 	}
 	f->write(&_res._ctData[0x100], 0x1C00);
 	for (CollisionSlot2 *cs2 = &_col_slots2[0]; cs2 < _col_slots2Cur; ++cs2) {
-		f->writeUint32BE(cs2->next_slot - &_col_slots2[0]);
-		f->writeUint32BE(cs2->unk2 - &_res._ctData[0x100]);
+		if (cs2->next_slot == 0) {
+			f->writeUint32BE(0xFFFFFFFF);
+		} else {
+			f->writeUint32BE(cs2->next_slot - &_col_slots2[0]);
+		}
+		if (cs2->unk2 == 0) {
+			f->writeUint32BE(0xFFFFFFFF);
+		} else {
+			f->writeUint32BE(cs2->unk2 - &_res._ctData[0x100]);
+		}
 		f->writeByte(cs2->data_size);
 		f->write(cs2->data_buf, 0x10);
 	}
@@ -1214,11 +1232,13 @@ void Game::saveState(File *f) {
 
 void Game::loadState(File *f) {
 	uint16 i;
+	uint32 off;
+	_skillLevel = f->readByte();
+	_score = f->readUint32BE();
 	memset(_pge_liveTable2, 0, sizeof(_pge_liveTable2));
 	memset(_pge_liveTable1, 0, sizeof(_pge_liveTable1));
 	_col_slots2Cur = &_col_slots2[0] + f->readUint32BE();
 	_col_slots2Next = &_col_slots2[0] + f->readUint32BE();
-	_score = f->readUint32BE();
 	for (i = 0; i < _res._pgeNum; ++i) {
 		LivePGE *pge = &_pgeLive[i];
 		pge->obj_type = f->readUint16BE();
@@ -1236,13 +1256,32 @@ void Game::loadState(File *f) {
 		pge->flags = f->readByte();
 		pge->index = f->readByte();
 		pge->first_obj_number = f->readUint16BE();
-		pge->next_PGE_in_room = &_pgeLive[0] + f->readUint32BE();
-		pge->init_PGE = &_res._pgeInit[0] + f->readUint32BE();
+		off = f->readUint32BE();
+		if (off == 0xFFFFFFFF) {
+			pge->next_PGE_in_room = 0;
+		} else {
+			pge->next_PGE_in_room = &_pgeLive[0] + off;
+		}
+		off = f->readUint32BE();
+		if (off == 0xFFFFFFFF) {
+			pge->init_PGE = 0;
+		} else {
+			pge->init_PGE = &_res._pgeInit[0] + off;
+		}
 	}
 	f->read(&_res._ctData[0x100], 0x1C00);
 	for (CollisionSlot2 *cs2 = &_col_slots2[0]; cs2 < _col_slots2Cur; ++cs2) {
-		cs2->next_slot = &_col_slots2[0] + f->readUint32BE();
-		cs2->unk2 = &_res._ctData[0x100] + f->readUint32BE();
+		off = f->readUint32BE();
+		if (off == 0xFFFFFFFF) {
+			cs2->next_slot = 0;
+		} else {
+			cs2->next_slot = &_col_slots2[0] + off;
+		}
+		if (off == 0xFFFFFFFF) {
+			cs2->unk2 = 0;
+		} else {
+			cs2->unk2 = &_res._ctData[0x100] + off;
+		}
 		cs2->data_size = f->readByte();
 		f->read(cs2->data_buf, 0x10);
 	}
