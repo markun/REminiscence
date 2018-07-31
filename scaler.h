@@ -16,23 +16,29 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __GRAPHICS_H__
-#define __GRAPHICS_H__
+#ifndef __SCALER_H__
+#define __SCALER_H__
 
 #include "intern.h"
 
-struct Graphics {
-	uint8 *_layer;
-	int16 _areaPoints[0x200];
+typedef void (*ScaleProc)(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
 
-	void drawPoint(uint8 color, const Point *pt);
-	void drawLine(uint8 color, const Point *pt1, const Point *pt2);
-	void addEllipseRadius(int16 y, int16 x1, int16 x2);
-	void drawEllipse(uint8 color, bool hasAlpha, const Point *pt, int16 rx, int16 ry);
-	void fillArea(uint8 color, bool hasAlpha);
-	void drawSegment(uint8 color, bool hasAlpha, int16 ys, const Point *pts, uint8 numPts);
-	void drawPolygonOutline(uint8 color, const Point *pts, uint8 numPts);
-	void drawPolygon(uint8 color, bool hasAlpha, const Point *pts, uint8 numPts);
+enum {
+	NUM_SCALERS = 5,
 };
 
-#endif // __GRAPHICS_H__
+struct Scaler {
+	const char *name;
+	ScaleProc proc;
+	uint8 factor;
+};
+
+extern const Scaler _scalers[];
+
+void point1x(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
+void point2x(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
+void point3x(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
+void scale2x(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
+void scale3x(uint16 *dst, uint16 dstPitch, const uint16 *src, uint16 srcPitch, uint16 w, uint16 h);
+
+#endif // __SCALER_H__

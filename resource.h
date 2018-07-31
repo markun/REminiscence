@@ -111,4 +111,4 @@ struct Resource {
 	void free_OBJ();
 };
 
-#endif
+#endif // __RESOURCE_H__

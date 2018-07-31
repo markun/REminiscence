@@ -48,7 +48,6 @@ struct Mixer {
 	Mixer(SystemStub *stub);
 	void init();
 	void free();
-
 	void play(const MixerChunk *mc, uint16 freq, uint8 volume);
 	void stopAll();
 	void mix(int8 *buf, int len);
@@ -56,4 +55,4 @@ struct Mixer {
 	static void mixCallback(void *param, uint8 *buf, int len);
 };
 
-#endif
+#endif // __MIXER_H__
