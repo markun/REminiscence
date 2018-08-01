@@ -4,7 +4,7 @@ SDL_LIBS     := `sdl2-config --libs`
 
 DL_LIBS      := -ldl
 MODPLUG_LIBS := -lmodplug
-TREMOR_LIBS  := -lvorbisidec -logg
+TREMOR_LIBS  := -lvorbis -lvorbisfile -logg
 ZLIB_LIBS    := -lz
 
 CXXFLAGS += -Wall -MMD $(SDL_CFLAGS) -DUSE_MODPLUG -DUSE_TREMOR -DUSE_ZLIB

@@ -5,7 +5,7 @@
  */
 
 #ifdef USE_TREMOR
-#include <tremor/ivorbisfile.h>
+#include <vorbis/vorbisfile.h>
 #endif
 #include "file.h"
 #include "mixer.h"
@@ -98,7 +98,7 @@ struct OggDecoder_impl {
 		}
 		int count = 0;
 		while (size > 0) {
-			const int len = ov_read(&_ovf, (char *)_readBuf, size, 0);
+			const int len = ov_read(&_ovf, (char *)_readBuf, size, 0, 2, 1, nullptr);
 			if (len < 0) {
 				// error in decoder
 				return count;
