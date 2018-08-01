@@ -10,7 +10,7 @@
 #include "systemstub.h"
 #include "util.h"
 
-static const int kAudioHz = 22050;
+static const int kAudioHz = 44100;
 
 static const char *kIconBmp = "icon.bmp";
 
