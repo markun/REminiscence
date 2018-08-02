@@ -686,7 +686,7 @@ void ModPlayer::stop() {
 	if (_playing) {
 		_mix->setPremixHook(0, 0);
 		_impl->unload();
-		_playing = true;
+		_playing = false;
 	}
 }
 
