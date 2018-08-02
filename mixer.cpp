@@ -119,6 +119,7 @@ void Mixer::playMusic(int num) {
 
 void Mixer::stopMusic() {
 	debug(DBG_SND, "Mixer::stopMusic()");
+	setPremixHook(0, 0);
 	switch (_musicType) {
 	case MT_NONE:
 		break;
@@ -142,8 +143,7 @@ void Mixer::stopMusic() {
 void Mixer::mix(int16_t *out, int len) {
 	if (_premixHook) {
 		if (!_premixHook(_premixHookData, out, len)) {
-			_premixHook = 0;
-			_premixHookData = 0;
+			stopMusic();
 		}
 	}
 	for (uint8_t i = 0; i < NUM_CHANNELS; ++i) {
