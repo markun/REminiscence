@@ -101,9 +101,6 @@ void Mixer::playMusic(int num) {
 			return;
 		}
 	}
-	if (_musicType == MT_OGG && isMusicSfx(num)) { // do not play level action music with background music
-		return;
-	}
 	if (isMusicSfx(num)) { // level action sequence
 		_sfx.play(num);
 		if (_sfx._playing) {
