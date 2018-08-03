@@ -114,11 +114,14 @@ static void scale4x(uint32_t *dst, int dstPitch, const uint32_t *src, int srcPit
 static void scaleNx(int factor, uint32_t *dst, int dstPitch, const uint32_t *src, int srcPitch, int w, int h) {
 	switch (factor) {
 	case 2:
-		return scale2x(dst, dstPitch, src, srcPitch, w, h);
+		scale2x(dst, dstPitch, src, srcPitch, w, h);
+        break;
 	case 3:
-		return scale3x(dst, dstPitch, src, srcPitch, w, h);
+		scale3x(dst, dstPitch, src, srcPitch, w, h);
+        break;
 	case 4:
-		return scale4x(dst, dstPitch, src, srcPitch, w, h);
+		scale4x(dst, dstPitch, src, srcPitch, w, h);
+        break;
 	}
 }
 

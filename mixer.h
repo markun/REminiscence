@@ -9,6 +9,7 @@
 
 #include "intern.h"
 #include "mod_player.h"
+#include "mid_player.h"
 #include "ogg_player.h"
 #include "sfx_player.h"
 
@@ -49,6 +50,7 @@ struct Mixer {
 		MT_MOD,
 		MT_OGG,
 		MT_SFX,
+        MT_MID
 	};
 
 	enum {
@@ -64,6 +66,7 @@ struct Mixer {
 	PremixHook _premixHook;
 	void *_premixHookData;
 	MusicType _musicType;
+	MidPlayer _mid;
 	ModPlayer _mod;
 	OggPlayer _ogg;
 	SfxPlayer _sfx;

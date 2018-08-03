@@ -3752,6 +3752,41 @@ const char *ModPlayer::_modulesFiles[][2] = {
 
 const int ModPlayer::_modulesFilesCount = ARRAYSIZE(_modulesFiles);
 
+/*
+   UNUSED FILES:
+   - opt.mid
+*/
+const char *MidPlayer::_midiFiles[][1] = {
+	{ "introlon.mid" }, // introl3
+	{ "option.mid"   }, // option3
+	{ ""             }, // journal3  MISSING FILE NAME???
+	{ "chute.mid"    }, // chute3
+	{ "desinteg.mid" }, // desinte3
+	{ ""             }, // capture3 MISSING FILE NAME???
+	{ ""             }, // voyage3 MISSING FILE NAME???
+	{ ""             }, // telepor3 MISSING FILE NAME???
+	{ ""             }, // planexp3 MISSING FILE NAME???
+	{ ""             }, // end31 MISSING FILE NAME???
+	{ ""             }, // lift3  MISSING FILE NAME???
+	{ "presente.mid" }, // present3
+	{ "gameover.mid" }, // gameove3
+	{ "holo.mid"     }, // holo3
+	{ ""             }, // memory3  MISSING FILE NAME???
+	{ "chutevid.mid" }, // chutevi3
+	{ "reveil.mid"   }, // reveil3
+	{ ""             }, // misvali3 MISSING FILE NAME???
+	{ ""             }, // taxi3 MISSING FILE NAME???
+	{ "donner.mid"   }, // donner3
+	{ ""             }, // mission3 MISSING FILE NAME???
+	{ "objet.mid"    }, // objet3
+	{ "recharge.mid" }, // recharg3
+	{ "generate.mid" }, // generat3
+	{ "pont.mid"     }, // pont3
+	{ "rechagen.mid" }  // rechage3
+};
+
+const int MidPlayer::_midiFilesCount = ARRAYSIZE(_midiFiles);
+
 const char *SeqPlayer::_namesTable[] = {
 	/* 0x00 */
 	"WAKEUP", // 'DEBUT' (0x0000) num 0

@@ -9,7 +9,7 @@
 #include "util.h"
 
 Mixer::Mixer(FileSystem *fs, SystemStub *stub)
-	: _stub(stub), _musicType(MT_NONE), _mod(this, fs), _ogg(this, fs), _sfx(this) {
+	: _stub(stub), _musicType(MT_NONE), _mid(stub, this, fs), _mod(this, fs), _ogg(this, fs), _sfx(this) {
 	_musicTrack = -1;
 }
 
@@ -110,7 +110,12 @@ void Mixer::playMusic(int num) {
 		_mod.play(num);
 		if (_mod._playing) {
 			_musicType = MT_MOD;
-		}
+		} else {
+    		_mid.play(num);
+    		if (_mid._playing) {
+	    		_musicType = MT_MID;
+            }
+        }
 	}
 }
 
@@ -122,6 +127,9 @@ void Mixer::stopMusic() {
 		break;
 	case MT_MOD:
 		_mod.stop();
+		break;
+	case MT_MID:
+		_mid.stop();
 		break;
 	case MT_OGG:
 		_ogg.pauseTrack();
