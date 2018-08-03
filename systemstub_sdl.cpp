@@ -96,7 +96,8 @@ void SystemStub_SDL::init(const char *title, int w, int h, bool fullscreen, Scal
 	_scaler = scalerParameters->scaler;
 	_scaleFactor = scalerParameters->factor;
 	memset(_rgbPalette, 0, sizeof(_rgbPalette));
-	_screenW = _screenH = 0;
+	_screenW = 0; _screenH = 0; _window = NULL;
+    _renderer = NULL; _fmt = NULL;
 	setScreenSize(w, h);
 	_joystick = 0;
 	_controller = 0;
