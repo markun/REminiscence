@@ -6,25 +6,25 @@
 struct MidiDevice {
     virtual ~MidiDevice() {};
     // Called when 'Note On' event is received
-    virtual void NoteOn(int Chn, int Num, int Speed) = 0;
+    virtual void NoteOn(int channel, int note, int velocity) = 0;
 
-    // Called whe'Note Off' event is received
-    virtual void NoteOff(int Chn, int Num, int Speed) = 0;
+    // Called when 'Note Off' event is received
+    virtual void NoteOff(int channel, int note, int velocity) = 0;
 
-    // Called whe'Key aftertouch' event is received
-    virtual void KAfter(int Chn, int Num, int Speed) = 0;
+    // Called when 'Key aftertouch' event is received
+    virtual void KAfter(int channel, int note, int velocity) = 0;
 
-    // Called whe'Control change' event is received
-    virtual void CChange(int Chn, int Num, int Speed) = 0;
+    // Called when 'Control change' event is received
+    virtual void CChange(int channel, int control, int value) = 0;
 
-    // Called whe'Path change' event is received
-    virtual void PChange(int Chn, int Num) = 0;
+    // Called when 'Path change' event is received
+    virtual void PChange(int channel, int program) = 0;
 
-    // Called whe'Channel aftertouch' event is received
-    virtual void CAfter(int Chn, int Num) = 0;
+    // Called when 'Channel aftertouch' event is received
+    virtual void CAfter(int channel, int pressure) = 0;
 
-    // Called whe'Pitch change' event is received
-    virtual void WChange(int Chn, int Num, int Speed) = 0;
+    // Called when 'Pitch change' event is received
+    virtual void WChange(int channel, int lsb, int msb) = 0;
 };
 
 #endif // MID_DEVICE_H__
