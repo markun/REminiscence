@@ -2,6 +2,7 @@
 #include "mixer.h"
 #include "systemstub.h"
 #include "util.h"
+#include "midi_device.h"
 
 #define MAKE_SIGNATURE(_3, _2, _1, _0) \
     (((_3) << 24) | ((_2) << 16) | ((_1) << 8) | (_0))
@@ -44,83 +45,6 @@ typedef struct {
 
 } MidiTrackHeaderType;
 
-// Default MIDI event handlers
-static void dummy_NoteOff(int Chn, int Num, int Speed) {}
-static void dummy_NoteOn (int Chn, int Num, int Speed) {}
-static void dummy_KAfter (int Chn, int Num, int Speed) {}
-static void dummy_CChange(int Chn, int Num, int Speed) {}
-static void dummy_PChange(int Chn, int Num) {}
-static void dummy_CAfter (int Chn, int Num) {}
-static void dummy_WChange(int Chn, int Num, int Speed) {}
-
-// Windows MIDI output driver
-#define WIN32_LEAN_AND_MEAN 1
-#define NOGDI 1
-#include <windows.h>
-#include <mmsystem.h>
-
-#define MAKE_SHORT_MSG(_0, _1, _2, _3) \
-    (((0) << 24) | ((_3) << 16) | ((_2) << 8) | (_0) | (_1))
-
-// Windows MIDI event handlers
-// (These should be moved outside the mid_player module).
-static HMIDIOUT out;
-
-int WinMidi_Open(void)
-{
-    unsigned int err;
- 
-    err = midiOutOpen(&out, MIDI_MAPPER, 0, 0, CALLBACK_NULL);
-    if (err != MMSYSERR_NOERROR)
-    {
-//       printf("error opening MIDI Mapper: %d\n", err);
-        return -1;
-    }
- 
-    return 0;
-}
-
-void WinMidi_Close(void)
-{
-    midiOutClose(out);
-}
-
-void WinMidi_NoteOff(int Chn, int Num, int Speed)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0x80, Chn, Num, Speed));
-}
-
-void WinMidi_NoteOn(int Chn, int Num, int Speed)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0x90, Chn, Num, Speed));
-}
-
-void WinMidi_KAfter(int Chn, int Num, int Speed)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0xA0, Chn, Num, Speed));
-}
-
-void WinMidi_CChange(int Chn, int Num, int Speed)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0xB0, Chn, Num, Speed));
-}
-
-void WinMidi_PChange(int Chn, int Num)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0xC0, Chn, Num, 0));
-}
-
-void WinMidi_CAfter(int Chn, int Num)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0xD0, Chn, Num, 0));
-}
-
-void WinMidi_WChange(int Chn, int Num, int Speed)
-{
-    midiOutShortMsg(out, MAKE_SHORT_MSG(0xE0, Chn, Num, Speed));
-}
-// END of Windows MIDI output driver
-
 struct MidPlayer_impl {
 
     unsigned int QNoteTime;
@@ -132,14 +56,6 @@ struct MidPlayer_impl {
 
     MidiTrack Track[MAX_TRACKS];
 
-    MidiPlay_NoteOn  NoteOn;
-    MidiPlay_NoteOff NoteOff;
-    MidiPlay_KAfter  KAfter;
-    MidiPlay_CChange CChange;
-    MidiPlay_PChange PChange;
-    MidiPlay_CAfter  CAfter;
-    MidiPlay_WChange WChange;
-
 	bool _repeatIntro;
 
     union {
@@ -147,37 +63,21 @@ struct MidPlayer_impl {
         MidiTrackHeaderType Track;
     } Header;
 
+    MidiDevice *_device;
 	SystemStub *_stub;
 
-	MidPlayer_impl() {
+	MidPlayer_impl(MidiDevice *device, SystemStub *stub) : _device(device), _stub(stub) {
 
         // Initialize pointer to tracks
         for (int n = 0; n < MAX_TRACKS; n++)
         {
             Track[n].Data = NULL;
         }
-
-        // Initialize default event handlers
-        NoteOn  = dummy_NoteOn;
-        NoteOff = dummy_NoteOff;
-        KAfter  = dummy_KAfter;
-        CChange = dummy_CChange;
-        PChange = dummy_PChange;
-        CAfter  = dummy_CAfter;
-        WChange = dummy_WChange;
-
-        // Initialize MIDI event handlers
-        // (These lines should be moved outside the mid_player module).
-        WinMidi_Open();
-
-        NoteOn  = WinMidi_NoteOn;
-        NoteOff = WinMidi_NoteOff;
-        KAfter  = WinMidi_KAfter;
-        CChange = WinMidi_CChange;
-        PChange = WinMidi_PChange;
-        CAfter  = WinMidi_CAfter;
-        WChange = WinMidi_WChange;
 	}
+
+	~MidPlayer_impl() {
+        delete _device;
+    }
 
     int get_byte(MidiTrack *Tr)
     {
@@ -251,7 +151,7 @@ struct MidPlayer_impl {
                 n1 = get_byte(Tr);
                 n2 = get_byte(Tr);
 
-                NoteOff(Chn, n1, n2);
+                _device->NoteOff(Chn, n1, n2);
                 break;
 
             case 0x9: // Note On
@@ -264,42 +164,42 @@ struct MidPlayer_impl {
 
                 // If speed is zero, it's like NoteOff
                 if (n2 == 0)
-                    NoteOff(Chn, n1, n2);
+                    _device->NoteOff(Chn, n1, n2);
                 else
-                    NoteOn(Chn, n1, n2);
+                    _device->NoteOn(Chn, n1, n2);
                 break;
 
             case 0xA: // Key aftertouch
                 n1 = get_byte(Tr);
                 n2 = get_byte(Tr);
 
-                KAfter(Chn, n1, n2);
+                _device->KAfter(Chn, n1, n2);
                 break;
 
             case 0xB: // Control change
                 n1 = get_byte(Tr);
                 n2 = get_byte(Tr);
 
-                CChange(Chn, n1, n2);
+                _device->CChange(Chn, n1, n2);
                 break;
 
             case 0xC: // Patch change
                 n1 = get_byte(Tr);
 
-                PChange(Chn, n1);
+                _device->PChange(Chn, n1);
                 break;
 
             case 0xD: // Channel aftertouch
                 n1 = get_byte(Tr);
 
-                CAfter(Chn, n1);
+                _device->CAfter(Chn, n1);
                 break;
 
             case 0xE: // Pitch change
                 n1 = get_byte(Tr);
                 n2 = get_byte(Tr);
 
-                WChange(Chn, n1, n2);
+                _device->WChange(Chn, n1, n2);
                 break;
 
             case 0xF: // System Messages (UNUSED)
@@ -384,7 +284,7 @@ struct MidPlayer_impl {
 
         for (int n = 0; n < 16; n++)
         {
-            CChange(n, 120, 0);
+            _device->CChange(n, 120, 0);
         }
 	}
 
@@ -421,16 +321,15 @@ struct MidPlayer_impl {
 	}
 };
 
-MidPlayer::MidPlayer(SystemStub *stub, Mixer *mixer, FileSystem *fs)
+MidPlayer::MidPlayer(MidiDevice *device, SystemStub *stub, Mixer *mixer, FileSystem *fs)
 	: _playing(false), _mix(mixer), _fs(fs) {
-	_impl = new MidPlayer_impl;
+	_impl = new MidPlayer_impl(device, stub);
 
     _impl->_stub = stub;
 }
 
 MidPlayer::~MidPlayer() {
     // This should be called outside this source code
-    WinMidi_Close();
 
 	delete _impl;
 }
