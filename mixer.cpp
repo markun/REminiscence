@@ -8,9 +8,10 @@
 #include "systemstub.h"
 #include "util.h"
 #include "midi_device_dummy.h"
+#include "midi_device_fluidsynth.h"
 
 Mixer::Mixer(FileSystem *fs, SystemStub *stub)
-	: _stub(stub), _musicType(MT_NONE), _mid(new MidiDeviceDummy(), stub, this, fs), _mod(this, fs), _ogg(this, fs), _sfx(this) {
+	: _stub(stub), _musicType(MT_NONE), _mid(new MidiDeviceFluidsynth(), stub, this, fs), _mod(this, fs), _ogg(this, fs), _sfx(this) {
 	_musicTrack = -1;
 }
 

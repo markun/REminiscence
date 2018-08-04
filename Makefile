@@ -17,7 +17,7 @@ SRCS = collision.cpp cutscene.cpp dynlib.cpp file.cpp fs.cpp game.cpp graphics.c
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(SRCS:.cpp=.d)
 
-LIBS = $(SDL_LIBS) $(DL_LIBS) $(MODPLUG_LIBS) $(TREMOR_LIBS) $(ZLIB_LIBS)
+LIBS = $(SDL_LIBS) $(DL_LIBS) $(MODPLUG_LIBS) $(TREMOR_LIBS) $(ZLIB_LIBS) -lfluidsynth
 
 rs: $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
