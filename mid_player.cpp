@@ -288,7 +288,7 @@ struct MidPlayer_impl {
         }
 	}
 
-	bool update(void) {
+	bool update(int16_t *buf, size_t len) {
         MidiTrack *Tr;
         uint32_t ms;
         int n, playing = 0;
@@ -317,7 +317,7 @@ struct MidPlayer_impl {
             }
         }
 
-		return true;
+        return _device->mix(buf, len);
 	}
 };
 
@@ -361,5 +361,5 @@ void MidPlayer::stop() {
 }
 
 bool MidPlayer::mixCallback(void *param, int16_t *buf, int len) {
-	return ((MidPlayer_impl *)param)->update();
+	return ((MidPlayer_impl *)param)->update(buf, len);
 }

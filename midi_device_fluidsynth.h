@@ -22,13 +22,14 @@ struct MidiDeviceFluidsynth : public MidiDevice {
     {
         fluid_settings_setstr(_settings, "audio.driver", "pulseaudio");
         fluid_settings_setstr(_settings, "audio.period-size", "4096");
+        fluid_settings_setint(_settings, "audio.pulseaudio.adjust-latency", 0);
         _synth = new_fluid_synth(_settings);
         fluid_synth_sfload(_synth, "/files/Software/Games/Audio/Soundfonts/SGM-V2.01.sf2", 1);
-        _adriver = new_fluid_audio_driver(_settings, _synth);
+        //_adriver = new_fluid_audio_driver(_settings, _synth);
     }
 
     ~MidiDeviceFluidsynth() {
-        delete_fluid_audio_driver(_adriver);
+        //delete_fluid_audio_driver(_adriver);
         delete_fluid_synth(_synth);
         delete_fluid_settings(_settings);
     }
@@ -64,6 +65,10 @@ struct MidiDeviceFluidsynth : public MidiDevice {
     fluid_settings_t* _settings;
     fluid_synth_t* _synth;
     fluid_audio_driver_t* _adriver;
+
+    bool mix(int16_t *buf, size_t len) override {
+        return fluid_synth_write_s16(_synth, len / 2, buf, 0, 2, buf, 1, 2) == FLUID_OK;
+    }
 };
 
 #endif // MID_DEVICE_FLUIDSYNTH_H__

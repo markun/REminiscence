@@ -25,6 +25,8 @@ struct MidiDevice {
 
     // Called when 'Pitch change' event is received
     virtual void WChange(int channel, int lsb, int msb) = 0;
+
+    virtual bool mix(int16_t *buf, size_t len) = 0;
 };
 
 #endif // MID_DEVICE_H__
